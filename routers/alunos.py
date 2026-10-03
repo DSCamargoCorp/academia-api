@@ -36,3 +36,23 @@ def listar_alunos(
     if nome is not None:
         query = query.filter(models.Aluno.nome.ilike(f"%{nome}%"))
     return query.all()
+@router.put("/{aluno_id}", response_model=schemas.AlunoResponse)
+def atualizar_aluno(aluno_id: int, dados: schemas.AlunoCreate, db: Session = Depends(get_db)):
+    aluno = db.query(models.Aluno).filter(models.Aluno.id == aluno_id).first()
+    if aluno is None:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    for campo, valor in dados.model_dump().items():
+        setattr(aluno, campo, valor)
+    db.commit()
+    db.refresh(aluno)
+    return aluno
+
+
+@router.delete("/{aluno_id}")
+def deletar_aluno(aluno_id: int, db: Session = Depends(get_db)):
+    aluno = db.query(models.Aluno).filter(models.Aluno.id == aluno_id).first()
+    if aluno is None:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    db.delete(aluno)
+    db.commit()
+    return {"mensagem": "Aluno removido com sucesso"}
